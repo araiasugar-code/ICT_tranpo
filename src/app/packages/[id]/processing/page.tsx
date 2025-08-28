@@ -75,7 +75,7 @@ export default function ProcessingPage() {
       setPackageData(packageData);
 
       // 処理状況を取得または作成
-      let { data: processingData, error: processingError } = await supabase
+      const { data: processingData, error: processingError } = await supabase
         .from('package_processing')
         .select('*')
         .eq('package_id', packageId)

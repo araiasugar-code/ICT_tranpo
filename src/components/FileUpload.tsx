@@ -79,7 +79,7 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
       // データベースにメタデータとBase64データを保存
       try {
         // file_dataカラムが存在しないため、一時的に除外してアップロード
-        let insertData: any = {
+        const insertData: Record<string, unknown> = {
           package_id: documentData.package_id,
           file_name: documentData.file_name,
           file_path: documentData.file_path,
@@ -124,9 +124,9 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
         onUploadComplete(documentData);
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      setError(error.message || 'アップロードに失敗しました');
+      setError(error instanceof Error ? error.message : 'アップロードに失敗しました');
     } finally {
       setUploading(false);
     }

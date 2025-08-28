@@ -17,7 +17,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: unknown }>;
   signOut: () => Promise<void>;
   demoLogin: () => Promise<void>;
   hasRole: (roles: string[]) => boolean;
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useMemo(() => {
-    let cache: { [key: string]: Profile } = {};
+    const cache: { [key: string]: Profile } = {};
     
     return async (userId: string) => {
       try {
