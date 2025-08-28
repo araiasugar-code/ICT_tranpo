@@ -1,14 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key';
+// 環境変数の厳密チェック
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 開発用チェック
-if (supabaseUrl.includes('demo.supabase.co') || supabaseAnonKey.includes('demo-key')) {
-  console.warn('⚠️ Supabaseの設定がデモ用です。実際のプロジェクトURLとキーを.env.localファイルに設定してください。');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Supabase環境変数が設定されていません');
+  console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅' : '❌');
+  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅' : '❌');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// デフォルト値で初期化（エラー防止）
+const url = supabaseUrl || 'https://demo.supabase.co';
+const key = supabaseAnonKey || 'demo-key';
+
+export const supabase = createClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

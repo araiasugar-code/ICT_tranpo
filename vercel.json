@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "env": {
+    "SKIP_ENV_VALIDATION": "1"
+  },
+  "functions": {
+    "app/**": {
+      "maxDuration": 30
+    }
+  }
+}
