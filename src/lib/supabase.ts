@@ -25,15 +25,14 @@ export const supabase = createClient(url, key, {
     headers: {
       'x-client-info': 'package-status-management@1.0.0',
     },
-    fetch: (url, options = {}) => {
-      return fetch(url, {
-        ...options,
-        // 15秒タイムアウトに短縮（速度重視）
-        signal: AbortSignal.timeout(15000),
-        // 接続の最適化
-        keepalive: true,
-      });
-    },
+    // カスタムfetchを削除してデフォルトのfetchを使用
+    // fetch: (url, options = {}) => {
+    //   return fetch(url, {
+    //     ...options,
+    //     signal: AbortSignal.timeout(15000),
+    //     keepalive: true,
+    //   });
+    // },
   },
   db: {
     schema: 'public',
