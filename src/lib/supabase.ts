@@ -15,36 +15,7 @@ console.log('Supabase Config:', {
   envKey: !!supabaseAnonKey
 });
 
-export const supabase = createClient(url, key, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    flowType: 'pkce',
-  },
-  global: {
-    headers: {
-      'x-client-info': 'package-status-management@1.0.0',
-    },
-    // カスタムfetchを削除してデフォルトのfetchを使用
-    // fetch: (url, options = {}) => {
-    //   return fetch(url, {
-    //     ...options,
-    //     signal: AbortSignal.timeout(15000),
-    //     keepalive: true,
-    //   });
-    // },
-  },
-  db: {
-    schema: 'public',
-  },
-  realtime: {
-    timeout: 15000,
-    // リアルタイム機能を無効化（パフォーマンス重視）
-    params: {
-      eventsPerSecond: 2,
-    },
-  },
-});
+export const supabase = createClient(url, key);
 
 export type Database = {
   public: {
