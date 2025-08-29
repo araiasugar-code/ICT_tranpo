@@ -49,48 +49,40 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
         throw new Error('サポートされていないファイル形式です（PDF、JPEG、PNG、GIF、WebPのみ）');
       }
 
-      // ファイルをBase64に変換（画面表示用）
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
       // ファイル名を生成（重複回避）
       const timestamp = new Date().getTime();
       const fileName = `${timestamp}_${file.name}`;
       const filePath = `packages/${packageId}/${fileName}`;
 
-      console.log('ファイルアップロード（Base64保存）:', file.name);
+      console.log('ファイルアップロード（Supabase Storage）:', file.name);
       
-      // Base64データを含むドキュメントデータを作成
-      const documentData = {
-        id: `doc-${timestamp}`,
+      // 1. Supabase Storageにファイルをアップロード
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`ファイルのアップロードに失敗しました: ${uploadError.message}`);
+      }
+
+      console.log('Storage upload success:', uploadData);
+
+      // 2. データベースにメタデータを保存
+      const insertData = {
         package_id: packageId === 'temp-package' ? null : packageId,
         file_name: file.name,
         file_path: filePath,
         file_type: file.type,
         file_size: file.size,
         document_type: documentType,
-        uploaded_at: new Date().toISOString(),
-        file_data: base64Data // Base64データを追加
+        uploaded_by: user.id
       };
 
-      // データベースにメタデータとBase64データを保存
-      try {
-        // file_dataカラムが存在しないため、一時的に除外してアップロード
-        const insertData: Record<string, unknown> = {
-          package_id: documentData.package_id,
-          file_name: documentData.file_name,
-          file_path: documentData.file_path,
-          file_type: documentData.file_type,
-          file_size: documentData.file_size,
-          document_type: documentType,
-          uploaded_by: user.id
-          // file_data: base64Data // 一時的にコメントアウト
-        };
-
-        console.log('Inserting document without file_data:', insertData);
+        console.log('Inserting document metadata:', insertData);
 
         const { data: savedDocument, error: dbError } = await supabase
           .from('documents')
@@ -100,28 +92,18 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
 
         if (dbError) {
           console.error('Database error details:', dbError);
-          if (dbError.code === 'PGRST204' && dbError.message?.includes('file_data')) {
-            // file_dataカラムが存在しない場合の特別な処理
-            console.warn('file_data column does not exist. Please run the database migration.');
-            alert('データベースにfile_dataカラムが存在しません。メタデータのみ保存します。');
-          } else {
-            console.error('Other database error:', dbError.code, dbError.message);
-            alert('データベース保存に失敗しましたが、一時的にローカルに保存されます');
-          }
-          // ローカルデータを返す（file_dataを含む）
-          onUploadComplete(documentData);
+          // Storageからファイルを削除（ロールバック）
+          await supabase.storage.from('documents').remove([filePath]);
+          throw new Error(`データベース保存に失敗しました: ${dbError.message}`);
         } else {
           console.log('Database save successful:', savedDocument);
-          // savedDocumentにfile_dataを追加してから返す
-          const documentWithFileData = {
-            ...savedDocument,
-            file_data: base64Data
-          };
-          onUploadComplete(documentWithFileData);
+          onUploadComplete(savedDocument);
         }
       } catch (dbError) {
-        console.error('Database insert failed, using local data:', dbError);
-        onUploadComplete(documentData);
+        console.error('Database insert failed:', dbError);
+        // Storageからファイルを削除（ロールバック）
+        await supabase.storage.from('documents').remove([filePath]);
+        throw dbError;
       }
 
     } catch (error: unknown) {

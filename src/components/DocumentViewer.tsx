@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Download, Eye, FileText } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface Document {
   id: string;
   file_name: string;
+  file_path: string;
   file_type: string;
   file_size: number;
-  file_data?: string;
   document_type: string;
   uploaded_at: string;
 }
@@ -21,27 +22,48 @@ interface DocumentViewerProps {
 
 export default function DocumentViewer({ document, isOpen, onClose }: DocumentViewerProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   if (!isOpen) return null;
 
-  const handleDownload = () => {
-    if (!document.file_data) return;
+  // 画像URLを取得
+  const getImageUrl = async () => {
+    if (!document.file_path) return;
+    
+    const { data } = supabase.storage
+      .from('documents')
+      .getPublicUrl(document.file_path);
+    
+    setImageUrl(data.publicUrl);
+  };
+
+  const isImage = document.file_type.startsWith('image/');
+  const isPDF = document.file_type === 'application/pdf';
+
+  // 画像の場合はURLを取得
+  useEffect(() => {
+    if (isImage && document.file_path) {
+      getImageUrl();
+    }
+  }, [document.file_path, isImage]);
+
+  const handleDownload = async () => {
+    if (!document.file_path) return;
 
     try {
-      // Base64データからBlobを作成
-      const base64Data = document.file_data.split(',')[1];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      // Supabase Storageからファイルをダウンロード
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .download(document.file_path);
+
+      if (error) {
+        console.error('Download error:', error);
+        alert('ファイルのダウンロードに失敗しました');
+        return;
       }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: document.file_type });
-      
+
       // ダウンロード用のリンクを作成
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
       link.download = document.file_name;
@@ -107,18 +129,18 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
-          {!document.file_data ? (
+          {!document.file_path ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">ファイルデータが利用できません</p>
+              <p className="text-gray-500">ファイルが利用できません</p>
               <p className="text-sm text-gray-400 mt-2">
-                このファイルはメタデータのみ保存されています
+                ファイルパスが見つかりません
               </p>
             </div>
-          ) : isImage && !imageError ? (
+          ) : isImage && imageUrl && !imageError ? (
             <div className="text-center">
               <img
-                src={document.file_data}
+                src={imageUrl}
                 alt={document.file_name}
                 className="max-w-full max-h-[60vh] object-contain mx-auto rounded"
                 onError={() => setImageError(true)}
