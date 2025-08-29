@@ -97,28 +97,22 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
         uploaded_by: user.id
       };
 
-        console.log('Inserting document metadata:', insertData);
+      console.log('Inserting document metadata:', insertData);
 
-        const { data: savedDocument, error: dbError } = await supabase
-          .from('documents')
-          .insert(insertData)
-          .select()
-          .single();
+      const { data: savedDocument, error: dbError } = await supabase
+        .from('documents')
+        .insert(insertData)
+        .select()
+        .single();
 
-        if (dbError) {
-          console.error('Database error details:', dbError);
-          // Storageからファイルを削除（ロールバック）
-          await supabase.storage.from('documents').remove([filePath]);
-          throw new Error(`データベース保存に失敗しました: ${dbError.message}`);
-        } else {
-          console.log('Database save successful:', savedDocument);
-          onUploadComplete(savedDocument);
-        }
-      } catch (dbError) {
-        console.error('Database insert failed:', dbError);
+      if (dbError) {
+        console.error('Database error details:', dbError);
         // Storageからファイルを削除（ロールバック）
         await supabase.storage.from('documents').remove([filePath]);
-        throw dbError;
+        throw new Error(`データベース保存に失敗しました: ${dbError.message}`);
+      } else {
+        console.log('Database save successful:', savedDocument);
+        onUploadComplete(savedDocument);
       }
 
     } catch (error: unknown) {

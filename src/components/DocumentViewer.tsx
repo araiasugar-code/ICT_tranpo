@@ -45,7 +45,7 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
     if (isImage && document.file_path) {
       getImageUrl();
     }
-  }, [document.file_path, isImage]);
+  }, [document.file_path]);
 
   const handleDownload = async () => {
     if (!document.file_path) return;
@@ -89,9 +89,6 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
     return new Date(dateString).toLocaleString('ja-JP');
   };
 
-  const isImage = document.file_type.startsWith('image/');
-  const isPDF = document.file_type === 'application/pdf';
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col">
@@ -109,7 +106,7 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {document.file_data && (
+            {document.file_path && (
               <button
                 onClick={handleDownload}
                 className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
