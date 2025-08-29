@@ -1,32 +1,42 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Eye, EyeOff, Package, CheckCircle } from 'lucide-react';
 
-function ResetPasswordForm() {
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isValidToken, setIsValidToken] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // URLからアクセストークンを取得
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    
-    if (!accessToken) {
-      setError('無効なリセットリンクです。再度パスワードリセットを行ってください。');
+    // URLからアクセストークンを取得（クライアントサイドでのみ）
+    if (typeof window !== 'undefined') {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      
+      if (accessToken) {
+        setIsValidToken(true);
+      } else {
+        setError('無効なリセットリンクです。再度パスワードリセットを行ってください。');
+      }
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidToken) {
+      setError('無効なリセットリンクです。');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -184,19 +194,18 @@ function ResetPasswordForm() {
   );
 }
 
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={
+  // ローディング状態の表示
+  if (!isValidToken && !error) {
+    return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-lg shadow-xl p-8 text-center">
             <div className="animate-spin h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">読み込み中...</p>
+            <p className="text-gray-600">認証情報を確認中...</p>
           </div>
         </div>
       </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
-  );
-}
+    );
+  }
+
+  return (
