@@ -54,22 +54,37 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
       const fileName = `${timestamp}_${file.name}`;
       const filePath = `packages/${packageId}/${fileName}`;
 
-      console.log('ファイルアップロード（Supabase Storage）:', file.name);
+      console.log('ファイルアップロード開始（Supabase Storage）:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       
       // 1. Supabase Storageにファイルをアップロード
+      const uploadStartTime = Date.now();
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          // パフォーマンス最適化
+          duplex: 'half'
         });
+
+      const uploadDuration = Date.now() - uploadStartTime;
+      console.log(`Storage upload completed in ${uploadDuration}ms:`, uploadData);
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        throw new Error(`ファイルのアップロードに失敗しました: ${uploadError.message}`);
+        
+        // 詳細なエラーメッセージ
+        let errorMessage = 'ファイルのアップロードに失敗しました';
+        if (uploadError.message?.includes('Payload too large')) {
+          errorMessage = 'ファイルサイズが大きすぎます（10MB以下にしてください）';
+        } else if (uploadError.message?.includes('storage/object-not-found')) {
+          errorMessage = 'ストレージバケットが見つかりません。管理者に連絡してください';
+        } else if (uploadError.message?.includes('row-level security')) {
+          errorMessage = 'ファイルのアップロード権限がありません';
+        }
+        
+        throw new Error(`${errorMessage}: ${uploadError.message}`);
       }
-
-      console.log('Storage upload success:', uploadData);
 
       // 2. データベースにメタデータを保存
       const insertData = {
@@ -190,9 +205,6 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
             </label>
             <p className="mt-1 text-xs text-gray-500">
               PDF、JPEG、PNG、GIF、WebP（最大10MB）
-            </p>
-            <p className="mt-1 text-xs text-orange-600">
-              ⚠️ 現在はモック機能です。ファイル情報のみ保存されます。
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { withCache, CacheKeys, cache } from './cache-utils';
 
 // タイムアウト付きのデータフェッチユーティリティ
 export async function withTimeout<T>(
@@ -47,26 +48,42 @@ export async function withRetry<T>(
   throw lastError!;
 }
 
-// パッケージ一覧の取得（タイムアウト・リトライ付き）
-export async function fetchPackages() {
-  return withRetry(
-    () => withTimeout(
-      supabase
-        .from('packages')
-        .select(`
-          *,
-          package_processing (
-            tracking_number_confirmation,
-            reservation_confirmation,
-            assigned_to,
-            due_date
-          )
-        `)
-        .order('created_at', { ascending: false }),
-      10000,
-      'パッケージデータの取得がタイムアウトしました'
+// パッケージ一覧の取得（キャッシュ・タイムアウト・リトライ付き）
+export async function fetchPackages(filters?: any) {
+  const cacheKey = CacheKeys.packages(filters);
+  
+  return withCache(
+    cacheKey,
+    () => withRetry(
+      () => withTimeout(
+        supabase
+          .from('packages')
+          .select(`
+            id,
+            tracking_number,
+            sender_type,
+            shipping_date,
+            expected_arrival_date,
+            description,
+            priority_level,
+            status,
+            created_at,
+            updated_at,
+            package_processing (
+              tracking_number_confirmation,
+              reservation_confirmation,
+              assigned_to,
+              due_date
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(50), // パフォーマンス向上のため最大50件に制限
+        8000, // タイムアウトを8秒に短縮
+        'パッケージデータの取得がタイムアウトしました'
+      ),
+      3 // リトライ回数を3回に増加
     ),
-    2
+    3 * 60 * 1000 // 3分間キャッシュ
   );
 }
 

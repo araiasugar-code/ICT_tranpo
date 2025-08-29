@@ -18,13 +18,19 @@ export const supabase = createClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    flowType: 'pkce',
   },
   global: {
+    headers: {
+      'x-client-info': 'package-status-management@1.0.0',
+    },
     fetch: (url, options = {}) => {
       return fetch(url, {
         ...options,
-        // 30秒タイムアウト
-        signal: AbortSignal.timeout(30000),
+        // 15秒タイムアウトに短縮（速度重視）
+        signal: AbortSignal.timeout(15000),
+        // 接続の最適化
+        keepalive: true,
       });
     },
   },
@@ -32,7 +38,11 @@ export const supabase = createClient(url, key, {
     schema: 'public',
   },
   realtime: {
-    timeout: 30000, // リアルタイム接続のタイムアウト
+    timeout: 15000,
+    // リアルタイム機能を無効化（パフォーマンス重視）
+    params: {
+      eventsPerSecond: 2,
+    },
   },
 });
 
