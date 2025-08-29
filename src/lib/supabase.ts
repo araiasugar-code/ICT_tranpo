@@ -19,6 +19,21 @@ export const supabase = createClient(url, key, {
     persistSession: true,
     autoRefreshToken: true,
   },
+  global: {
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        // 30秒タイムアウト
+        signal: AbortSignal.timeout(30000),
+      });
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  realtime: {
+    timeout: 30000, // リアルタイム接続のタイムアウト
+  },
 });
 
 export type Database = {

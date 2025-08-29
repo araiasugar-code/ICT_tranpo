@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import { supabase } from '@/lib/supabase';
+import { fetchPackages, normalizeErrorMessage, checkConnection } from '@/lib/data-utils';
 import { 
   Package, 
   Plus, 
@@ -43,6 +44,8 @@ export default function PackagesPage() {
   const { hasRole } = useAuth();
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [senderTypeFilter, setSenderTypeFilter] = useState('all');
@@ -51,9 +54,15 @@ export default function PackagesPage() {
   const loadPackages = async (forceRefresh = false) => {
     try {
       setLoading(true);
+      setError('');
       
-      // キャッシュをクリアするためのタイムスタンプを追加
-      const timestamp = forceRefresh ? `?t=${Date.now()}` : '';
+      // 接続状態をチェック
+      const isConnected = await checkConnection();
+      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+      
+      if (!isConnected) {
+        throw new Error('データベースに接続できませんでした');
+      }
       
       console.log('Packages list: Building query...');
       let query = supabase
@@ -102,8 +111,12 @@ export default function PackagesPage() {
       });
       
       setPackages(processedPackages);
+      setConnectionStatus('connected');
     } catch (error) {
       console.error('Error loading packages:', error);
+      const errorMessage = normalizeErrorMessage(error);
+      setError(errorMessage);
+      setConnectionStatus('disconnected');
     } finally {
       setLoading(false);
     }
@@ -245,6 +258,45 @@ export default function PackagesPage() {
               </div>
             )}
           </div>
+
+          {/* Connection Status & Error Messages */}
+          {connectionStatus === 'disconnected' && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">接続エラー</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{error || 'データベースに接続できませんでした'}</p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => loadPackages(true)}
+                      disabled={loading}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-red-800 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                    >
+                      {loading ? '再接続中...' : '再接続'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {connectionStatus === 'checking' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">接続状態を確認中...</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
