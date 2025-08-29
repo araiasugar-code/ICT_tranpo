@@ -59,7 +59,7 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
       // 1. Supabase Storageにファイルをアップロード
       const uploadStartTime = Date.now();
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
+        .from('file')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
@@ -108,7 +108,7 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
       if (dbError) {
         console.error('Database error details:', dbError);
         // Storageからファイルを削除（ロールバック）
-        await supabase.storage.from('documents').remove([filePath]);
+        await supabase.storage.from('file').remove([filePath]);
         throw new Error(`データベース保存に失敗しました: ${dbError.message}`);
       } else {
         console.log('Database save successful:', savedDocument);

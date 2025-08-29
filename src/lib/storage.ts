@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const BUCKET_NAME = 'documents';
+const BUCKET_NAME = 'file';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',

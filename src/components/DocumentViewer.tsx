@@ -31,7 +31,7 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
     if (!document.file_path) return;
     
     const { data } = supabase.storage
-      .from('documents')
+      .from('file')
       .getPublicUrl(document.file_path);
     
     setImageUrl(data.publicUrl);
@@ -53,7 +53,7 @@ export default function DocumentViewer({ document, isOpen, onClose }: DocumentVi
     try {
       // Supabase Storageからファイルをダウンロード
       const { data, error } = await supabase.storage
-        .from('documents')
+        .from('file')
         .download(document.file_path);
 
       if (error) {

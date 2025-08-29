@@ -131,7 +131,7 @@ export async function fetchDocumentsByPackageId(packageId: string) {
   return withRetry(
     () => withTimeout(
       supabase
-        .from('documents')
+        .from('file')
         .select('*')
         .eq('package_id', packageId)
         .order('uploaded_at', { ascending: false }),
