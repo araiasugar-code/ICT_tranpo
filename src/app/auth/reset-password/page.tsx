@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ResetPasswordPage() {
       } else {
         setError('無効なリセットリンクです。再度パスワードリセットを行ってください。');
       }
+      setInitialLoading(false);
     }
   }, []);
 
@@ -68,6 +70,21 @@ export default function ResetPasswordPage() {
     setLoading(false);
   };
 
+  // 初期ローディング状態
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+            <div className="animate-spin h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-600">認証情報を確認中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 成功画面
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
@@ -90,6 +107,7 @@ export default function ResetPasswordPage() {
     );
   }
 
+  // メインのパスワードリセット画面
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -129,13 +147,13 @@ export default function ResetPasswordPage() {
                   className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 
                            focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="6文字以上で入力してください"
-                  disabled={loading}
+                  disabled={loading || !isValidToken}
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  disabled={loading || !isValidToken}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4 text-gray-400" />
@@ -159,13 +177,13 @@ export default function ResetPasswordPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 
                          focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="同じパスワードを再入力してください"
-                disabled={loading}
+                disabled={loading || !isValidToken}
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isValidToken}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
@@ -173,6 +191,8 @@ export default function ResetPasswordPage() {
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                   更新中...
                 </div>
+              ) : !isValidToken ? (
+                '無効なリンク'
               ) : (
                 'パスワードを更新'
               )}
@@ -193,19 +213,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-
-  // ローディング状態の表示
-  if (!isValidToken && !error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-            <div className="animate-spin h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">認証情報を確認中...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
