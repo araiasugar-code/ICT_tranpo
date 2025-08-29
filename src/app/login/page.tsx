@@ -11,7 +11,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, demoLogin } = useAuth();
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const { signIn, demoLogin, resetPassword } = useAuth();
   const router = useRouter();
 
   // デモモードかチェック
@@ -40,6 +42,27 @@ export default function LoginPage() {
     router.push('/dashboard');
   };
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('パスワードリセットにはメールアドレスを入力してください。');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    setResetMessage('');
+
+    const { error } = await resetPassword(email);
+    
+    if (error) {
+      setError('パスワードリセットメールの送信に失敗しました。');
+    } else {
+      setResetMessage('パスワードリセットメールを送信しました。メールを確認してください。');
+    }
+    
+    setResetLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -62,6 +85,12 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+
+            {resetMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+                {resetMessage}
               </div>
             )}
 
@@ -167,6 +196,18 @@ export default function LoginPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* パスワードリセットリンク */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={resetLoading}
+                className="text-sm text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                {resetLoading ? 'メール送信中...' : 'パスワードを忘れた方はこちら'}
+              </button>
             </div>
           </form>
 

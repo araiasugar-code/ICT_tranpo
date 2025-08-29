@@ -20,6 +20,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: unknown }>;
   signOut: () => Promise<void>;
   demoLogin: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: unknown }>;
   hasRole: (roles: string[]) => boolean;
 }
 
@@ -282,6 +283,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setSession(null);
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    return { error };
+  };
+
   const hasRole = (roles: string[]) => {
     if (!profile) return false;
     return roles.includes(profile.role);
@@ -295,6 +303,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     demoLogin,
+    resetPassword,
     hasRole,
   }), [user, profile, session, loading]);
 
