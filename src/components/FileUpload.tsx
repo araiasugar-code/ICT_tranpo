@@ -51,10 +51,14 @@ export default function FileUpload({ packageId, onUploadComplete }: FileUploadPr
 
       // ファイル名を生成（重複回避）
       const timestamp = new Date().getTime();
-      const fileName = `${timestamp}_${file.name}`;
+      // ファイル名をサニタイズ（特殊文字を除去、URLエンコード）
+      const sanitizedName = file.name
+        .replace(/[^a-zA-Z0-9.\-_]/g, '_') // 特殊文字をアンダースコアに置換
+        .replace(/_{2,}/g, '_'); // 連続するアンダースコアを1つに
+      const fileName = `${timestamp}_${sanitizedName}`;
       // 一時パッケージの場合は特別なパス構造を使用
       const filePath = packageId === 'temp-package' 
-        ? `temp/${timestamp}_${file.name}`
+        ? `temp/${fileName}`
         : `packages/${packageId}/${fileName}`;
 
       console.log('ファイルアップロード開始（Supabase Storage）:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
