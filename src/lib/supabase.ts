@@ -4,15 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Supabase環境変数が設定されていません');
-  console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅' : '❌');
-  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅' : '❌');
-}
+// 緊急修正: 直接値を設定（環境変数が読み込まれない場合の対応）
+const url = supabaseUrl || 'https://kdexhywdbpxwhoaabhx.supabase.co';
+const key = supabaseAnonKey || 'sb_publishable_b1lZPvy35zto4Au3GufYg_UZBS-CN5';
 
-// デフォルト値で初期化（エラー防止）
-const url = supabaseUrl || 'https://demo.supabase.co';
-const key = supabaseAnonKey || 'demo-key';
+console.log('Supabase Config:', {
+  url: url,
+  keyExists: !!key,
+  envUrl: !!supabaseUrl,
+  envKey: !!supabaseAnonKey
+});
 
 export const supabase = createClient(url, key, {
   auth: {
